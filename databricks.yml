@@ -1,0 +1,23 @@
+bundle:
+  name: Occupancy_MLOps_Project
+  git:
+    origin_url: https://github.com/Prosperibe12/databricks-occupancy-mlops.git
+    branch: master 
+
+variables:
+  experiment_name:
+    description: Experiment name for MLFlow experiment
+    default: ProjectOccupancy
+
+  model_name:
+    description: The model name for MLFlow registry.
+    default: occupancymodel
+
+include:
+  - ./resources/feature-engineering-workflow.yml
+
+targets:
+  dev:
+    mode: development
+    workspace:
+      host: https://adb-3793652167448328.8.azuredatabricks.net/

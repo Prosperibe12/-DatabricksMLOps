@@ -15,6 +15,7 @@ variables:
 
 include:
   - ./resources/feature-engineering-workflow.yml
+  - ./resources/model-train-workflow.yml
 
 targets:
   dev:

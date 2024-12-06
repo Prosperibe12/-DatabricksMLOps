@@ -1,0 +1,16 @@
+resources:
+  jobs:
+    model_training_job:
+      name: ${bundle.target}-model-training-job
+      tasks:
+        - task_key: Train-Model
+          existing_cluster_id: 1124-002237-wtnth99j
+          notebook_task:
+            notebook_path: ../main/steps/train_model.ipynb
+            base_parameters:
+              env: ${bundle.target}
+              experiment_name: ${bundle.target}_ProjectOccupancy
+              model_name: ${bundle.target}_occupancymodel
+              catalog_name: ai_ml_learning
+              schema_name: occupancy_project
+              feature_table_name: dev_occupancy_feature

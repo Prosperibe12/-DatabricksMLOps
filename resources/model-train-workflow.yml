@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-model-training-job
       tasks:
         - task_key: Train-Model
-          existing_cluster_id: 1124-002237-wtnth99j
+          existing_cluster_id: 1201-155438-nc7hpm60
           notebook_task:
             notebook_path: ../main/steps/train_model.ipynb
             base_parameters:

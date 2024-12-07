@@ -1,9 +1,9 @@
-from _future_ import annotations
 from abc import ABC, abstractmethod
 import logging
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from pyspark.sql import SparkSession
 
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.preprocessing import StandardScaler
@@ -18,7 +18,7 @@ from hyperopt import hp
 from hyperopt import STATUS_OK
 from hyperopt import SparkTrials, fmin, tpe
 
-from databricks.feature_engineering import FeatureLookup, FeatureEngineeringClient
+from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
 
 # Set up logging for debugging
 logging.basicConfig(level=logging.INFO)
@@ -45,17 +45,17 @@ class AbstractModelFactory(ABC):
         raise NotImplementedError("Concrete class must implement this method")
 
     @abstractmethod
-    def train_model(self, data):
+    def train_model(self, X_train, X_test, y_train, y_test):
         """ Abstract method to train the model. """
         raise NotImplementedError("Concrete class must implement this method")
 
     @abstractmethod
-    def tune_hyperparameters(self, model, data, hyperparameter_grid):
+    def tune_hyperparameters(self, X_train, X_test, y_train, y_test):
         """ Abstract method for hyperparameter tuning. """
         raise NotImplementedError("Concrete class must implement this method")
 
     @abstractmethod
-    def start(self, path: str):
+    def start(self):
         """ Abstract method to start the model training process. """
         raise NotImplementedError("Concrete class must implement this method")
 
@@ -63,14 +63,16 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
     """
     Concrete class for Tensorflow model implementation
     """
-    def __init__(self, feature_table: str, experiment_name: str, run_name: str):
+    def __init__(self, feature_table: str, experiment_name: str, run_name: str, user: str):
         self.feature_table = feature_table
         self.experiment_name = experiment_name 
         self.run_name = run_name
+        self.current_user = user
+        self.spark = SparkSession.builder.getOrCreate()
         # set databricks unity catalog as model registry
         mlflow.set_registry_uri("databricks-uc")
         # set expriment name
-        mlflow.set_experiment(self.experiment_name)
+        mlflow.set_experiment(f"/Users/{self.current_user}/{self.experiment_name}")
     
     def get_data(self):
         """
@@ -81,7 +83,7 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
             DataFrame: Spark DataFrame containing the data.
         """
         try:
-            data = spark.read.format("delta").load(self.feature_table)
+            data = self.spark.read.format("delta").table(self.feature_table)
             logging.info(f"Data successfully loaded from {self.feature_table}")
             return data
         except Exception as e:
@@ -98,10 +100,13 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
             pd.DataFrame: Prepared Pandas DataFrame with features and labels.
         """
         try:
-            fe = FeatureEngineeringClient()
+            # get feature table 
+            feature_table = f"{self.feature_table}"
+            
+            # get lookup features
             feature_lookup = [
                 FeatureLookup(
-                    table_name=self.feature_table,
+                    table_name=feature_table,
                     feature_names=["Temperature", "Light", "CO2", "HumidityRatio"],
                     lookup_key="Id",
                     rename_outputs={
@@ -112,20 +117,29 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
                     }
                 )
             ]
+
+            # create training set
+            fe = FeatureEngineeringClient()
+
+            # create training dataset
             training_dataset = fe.create_training_set(
                 df=df,
                 feature_lookups=feature_lookup,
                 label="Occupancy",
                 exclude_columns=["Id", "Humidity"]
             )
+
+            # convert to pandas dataframe with selected features
             training_df = training_dataset.load_df()
             features_and_label = ["room_temperature", "room_light", "co2_ppm", "humidity_ratio", "Occupancy"]
+
             return training_df.toPandas()[features_and_label]
+        
         except Exception as e:
             logging.error(f"Error preparing data: {e}")
             raise RuntimeError(f"Data preparation failed: {e}")
 
-    def split_normalize_data(self, data: pd.DataFrame):
+    def split_normalize_data(self, data):
         """
         Split the data into training and testing sets and normalize the features.
         Args:
@@ -212,7 +226,7 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
         Perform hyperparametre tunning for model using hyperopt framework
         """
         # retrieve experiment so they are logged together with the hyper parameter runs
-        experiment_id = mlflow.get_experiment_by_name(self.experiment_name).experiment_id
+        experiment = mlflow.get_experiment_by_name(f"/Users/{self.current_user}/{self.experiment_name}")
 
         # define the search space
         search_space = {
@@ -269,7 +283,7 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
 
         # set spark trials for parallel runs
         trials = SparkTrials(parallelism=4)
-        with mlflow.start_run(experiment_id=experiment_id, run_name=f"{self.run_name}_Hyperparameter_Tunning") as parent_run:
+        with mlflow.start_run(experiment_id=experiment.experiment_id, run_name=f"{self.run_name}_Hyperparameter_Tunning") as parent_run:
             fmin(
                 tuning_objective,
                 space=search_space,
@@ -289,7 +303,7 @@ class ConcreteDecisionTreeModel(AbstractModelFactory):
         """
         try:
             # load data from feature store
-            df = self.get_data(self.path)
+            df = self.get_data()
             # do feature lookup from feature store
             data = self.prepare_data(df)
             # split and normalize data
@@ -313,18 +327,19 @@ class ConcreteModelFactory:
     Implements the Concrete model class
     """
     
-    def _init_(self, model_type: str, feature_table: str, experiment_name: str, run_name: str):
+    def __init__(self, model_type: str, feature_table: str, experiment_name: str, run_name: str, current_user: str):
         self.model_type = model_type
         self.feature_table = feature_table
         self.experiment_name = experiment_name
         self.run_name = run_name
+        self.user = current_user
 
     def create_model(self):
         """
         Returns the appropriate model based on the specified type.
         """
         if self.model_type == "DecisionTree":
-            return ConcreteDecisionTreeModel(self.feature_table, self.experiment_name, self.run_name)
+            return ConcreteDecisionTreeModel(self.feature_table, self.experiment_name, self.run_name, self.user)
         else:
             logging.error(f"Unsupported model type: {self.model_type}")
             raise ValueError(f"Unsupported model type: {self.model_type}")

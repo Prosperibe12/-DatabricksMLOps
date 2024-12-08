@@ -152,13 +152,10 @@ class DecisionTreeModel(AbstractModelFactory):
 
             # evaluate on the test set and log evaluation metrics
             y_pred = dtc_mdl.predict(X_test)
-            metrics = {
-                "accuracy": accuracy_score(y_test, y_pred),
-                "precision": precision_score(y_test, y_pred),
-                "recall": recall_score(y_test, y_pred),
-                "f1_score": f1_score(y_test, y_pred)
-            }
-            mlflow.log_metric(metrics)
+            mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
+            mlflow.log_metric("precision", precision_score(y_test, y_pred))
+            mlflow.log_metric("recall", recall_score(y_test, y_pred))
+            mlflow.log_metric("f1_score", f1_score(y_test, y_pred))
 
             # log confusion matrix
             log_confusion_matrix(y_test, y_pred, labels=[1, 0], artifact_path="confusion_matrix.png")

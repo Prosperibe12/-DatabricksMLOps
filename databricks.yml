@@ -21,4 +21,4 @@ targets:
   dev:
     mode: development
     workspace:
-      host: https://adb-3793652167448328.8.azuredatabricks.net/
+      host: https://adb-2735906820628339.19.azuredatabricks.net/

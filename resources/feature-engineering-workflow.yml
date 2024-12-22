@@ -34,7 +34,7 @@ resources:
             base_parameters:
               env: ${bundle.target}
               catalog_name: bms
-              schema_name: bms
+              schema_name: occupancy_project
               gold_table_name: goldtable 
               feature_table_name: ${bundle.target}_occupancy_feature
 

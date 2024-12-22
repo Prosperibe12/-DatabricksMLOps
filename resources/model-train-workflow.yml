@@ -4,13 +4,25 @@ resources:
       name: ${bundle.target}-model-training-job
       tasks:
         - task_key: Train-Model
-          existing_cluster_id: 1201-155438-nc7hpm60
+          existing_cluster_id: 1218-175127-jnkf1oqt
           notebook_task:
             notebook_path: ../main/steps/train_model.ipynb
             base_parameters:
               env: ${bundle.target}
               experiment_name: ${bundle.target}_ProjectOccupancy
-              model_name: ${bundle.target}_occupancymodel
-              catalog_name: ai_ml_learning
+              catalog_name: bms
               schema_name: occupancy_project
               feature_table_name: dev_occupancy_feature
+              validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
+        
+        - task_key: Register-Validate-Model
+          existing_cluster_id: 1218-175127-jnkf1oqt
+          notebook_task: 
+            notebook_path: ../main/steps/register_model.ipynb
+            base_parameters: 
+              env: ${bundle.target}
+              experiment_name: ${bundle.target}_ProjectOccupancy
+              catalog_name: bms
+              schema_name: occupancy_project
+              model_name: ${bundle.target}_occupancymodel
+              validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data

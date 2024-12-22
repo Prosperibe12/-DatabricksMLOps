@@ -24,9 +24,10 @@ class DecisionTreeModel(AbstractModelFactory):
     """
     Concrete implementation of a Decision Tree Model training pipeline.
     """
-    def __init__(self, feature_table, experiment_name, run_name, user):
+    def __init__(self, feature_table, experiment_name, validation_data_path, run_name, user):
         self.feature_table = feature_table
         self.experiment_name = experiment_name
+        self.validation_data_path = validation_data_path
         self.run_name = run_name
         self.current_user = user
         self.spark = SparkSession.builder.getOrCreate()
@@ -98,18 +99,28 @@ class DecisionTreeModel(AbstractModelFactory):
         """
         try:
             # separate data into X & Y
-            X = data.drop(columns=["Occupancy"])
+            x = data.drop(columns=["Occupancy"])
             y = data["Occupancy"]
+
+            # split data into train and test set
+            X_data, X_test, y_data, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+            # split further for validation set
+            x_train,x_val,y_train,y_val = train_test_split(X_data,y_data, test_size=0.2,random_state=42)
+            logging.info("Data split and normalized successfully.")
+
+            # create a spark dataframe and save validation data
+            x_val["Occupancy"] = y_val
+            new_df = self.spark.createDataFrame(x_val)
+            new_df.write.format("csv").option("header", "true").mode("overwrite").save(self.validation_data_path)
 
             # scale the data
             scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
+            scaled = scaler.fit(X_test)
 
-            # split data into train and test set
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
-            logging.info("Data split and normalized successfully.")
+            x_train_scaled = scaled.transform(x_train)
+            x_test_scaled = scaled.transform(X_test)
 
-            return X_train, X_test, y_train, y_test
+            return x_train_scaled, x_test_scaled, y_train, y_test
         
         except Exception as e:
             logging.error(f"Error in data splitting and normalization: {e}")

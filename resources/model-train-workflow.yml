@@ -17,6 +17,8 @@ resources:
         
         - task_key: Register-Validate-Model
           existing_cluster_id: 1218-175127-jnkf1oqt
+          depends_on: 
+            - task_key: Train-Model
           notebook_task: 
             notebook_path: ../main/steps/register_model.ipynb
             base_parameters: 

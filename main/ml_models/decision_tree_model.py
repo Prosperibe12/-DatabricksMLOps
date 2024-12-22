@@ -98,6 +98,8 @@ class DecisionTreeModel(AbstractModelFactory):
         Split the data into training and testing sets and normalize the features.
         """
         try:
+            # shuffle the data
+            data = data.sample(frac=1)
             # separate data into X & Y
             x = data.drop(columns=["Occupancy"])
             y = data["Occupancy"]

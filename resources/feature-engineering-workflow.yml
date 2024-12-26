@@ -11,7 +11,7 @@ resources:
               env: ${bundle.target}
               file_path: /dbfs/FileStore/RawData/
               store_path: dbfs:/FileStore/RawData/
-              catalog_name: bms
+              catalog_name: prod-bms
               schema_name: occupancy_project
               
         - task_key: Exploratory-Data-Analysis
@@ -22,7 +22,7 @@ resources:
             notebook_path: ../feature_engineering/notebook/silver_data.ipynb
             base_parameters:
               env: ${bundle.target}
-              catalog_name: bms
+              catalog_name: prod-bms
               schema_name: occupancy_project
           
         - task_key: Feature-Store
@@ -33,7 +33,7 @@ resources:
             notebook_path: ../feature_engineering/notebook/feature_store.ipynb 
             base_parameters:
               env: ${bundle.target}
-              catalog_name: bms
+              catalog_name: prod-bms
               schema_name: occupancy_project
               gold_table_name: goldtable 
               feature_table_name: ${bundle.target}_occupancy_feature

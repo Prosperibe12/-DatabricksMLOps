@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-model-training-job
       tasks:
         - task_key: Train-Model
-          existing_cluster_id: 1223-124844-azgl25az
+          existing_cluster_id: 1226-151352-27sokbau
           notebook_task:
             notebook_path: ../main/steps/train_model.ipynb
             base_parameters:
@@ -16,7 +16,7 @@ resources:
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
         
         - task_key: Register-Validate-Model
-          existing_cluster_id: 1223-124844-azgl25az
+          existing_cluster_id: 1226-151352-27sokbau
           depends_on: 
             - task_key: Train-Model
           notebook_task: 

@@ -10,7 +10,7 @@ resources:
             base_parameters:
               env: ${bundle.target}
               experiment_name: ${bundle.target}_ProjectOccupancy
-              catalog_name: bms
+              catalog_name: prod-bms
               schema_name: occupancy_project
               feature_table_name: dev_occupancy_feature
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
@@ -24,7 +24,7 @@ resources:
             base_parameters: 
               env: ${bundle.target}
               experiment_name: ${bundle.target}_ProjectOccupancy
-              catalog_name: bms
+              catalog_name: prod-bms
               schema_name: occupancy_project
               model_name: ${bundle.target}_occupancymodel
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data

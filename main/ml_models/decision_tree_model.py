@@ -13,8 +13,8 @@ import mlflow
 from mlflow.models.signature import infer_signature
 
 from hyperopt import hp
-from hyperopt import STATUS_OK
-from hyperopt import SparkTrials, fmin, tpe
+from hyperopt import STATUS_OK, STATUS_FAIL
+from hyperopt import SparkTrials, Trials, fmin, tpe
 
 from databricks.feature_engineering import FeatureEngineeringClient, FeatureLookup
 from .abstract_model import AbstractModelFactory
@@ -98,8 +98,6 @@ class DecisionTreeModel(AbstractModelFactory):
         Split the data into training and testing sets and normalize the features.
         """
         try:
-            # shuffle the data
-            data = data.sample(frac=1)
             # separate data into X & Y
             x = data.drop(columns=["Occupancy"])
             y = data["Occupancy"]
@@ -154,12 +152,12 @@ class DecisionTreeModel(AbstractModelFactory):
             dtc_mdl = dtc.fit(X_train, y_train)
 
             # define model signiture
-            signature = infer_signature(X_train, y_train)
+            signature = infer_signature(X_train, dtc_mdl.predict(X_train))
 
             # log the model
             mlflow.sklearn.log_model(
                 sk_model = dtc_mdl, 
-                artifact_path="model-artifacts",
+                artifact_path="models",
                 signature=signature,
             )
 
@@ -175,7 +173,7 @@ class DecisionTreeModel(AbstractModelFactory):
 
         return run
     
-    def tune_hyperparameters(self, X_train, X_test, y_train, y_test):
+    def tune_hyperparameters(self, X_train, y_train):
         """
         Perform hyperparametre tunning for model using hyperopt framework
         """
@@ -204,7 +202,6 @@ class DecisionTreeModel(AbstractModelFactory):
 
                 # set up model estimator
                 dtc = DecisionTreeClassifier(**params)
-                
                 # cross-validated on the training set
                 validation_scores = ['accuracy', 'precision', 'recall', 'f1']
                 cv_results = cross_validate(dtc, 
@@ -229,13 +226,13 @@ class DecisionTreeModel(AbstractModelFactory):
                 }
 
         # set spark trials for parallel runs
-        trials = SparkTrials(parallelism=4)
+        trials = Trials()
         with mlflow.start_run(experiment_id=experiment.experiment_id, run_name=f"{self.run_name}_Hyperparameter_Tunning") as parent_run:
             fmin(
                 tuning_objective,
                 space=search_space,
                 algo=tpe.suggest,
-                max_evals=5,
+                max_evals=10,
                 trials=trials
             )
         # get the best run info
@@ -258,7 +255,7 @@ class DecisionTreeModel(AbstractModelFactory):
             # train model
             train_run = self.train_model(X_train, X_test, y_train, y_test)
             # tune hyperparameter
-            best_run = self.tune_hyperparameters(X_train, X_test, y_train, y_test)
+            best_run = self.tune_hyperparameters(X_train, y_train)
     
             logging.info("Model Training and Hyper-parameter tunning completed!")
             # return best run id

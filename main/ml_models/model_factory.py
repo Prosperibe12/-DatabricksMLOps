@@ -1,5 +1,5 @@
 import logging
-from . decision_tree_model import DecisionTreeModel
+from main.ml_models.decision_tree_model import DecisionTreeModel
 
 
 class ModelFactory:

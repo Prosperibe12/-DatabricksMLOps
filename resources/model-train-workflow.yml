@@ -4,19 +4,19 @@ resources:
       name: ${bundle.target}-model-training-job
       tasks:
         - task_key: Train-Model
-          existing_cluster_id: 1226-151352-27sokbau
+          existing_cluster_id: 1226-211538-cvgpajib
           notebook_task:
             notebook_path: ../main/steps/train_model.ipynb
             base_parameters:
               env: ${bundle.target}
               experiment_name: ${bundle.target}_ProjectOccupancy
-              catalog_name: prod-bms
+              catalog_name: devaiml
               schema_name: occupancy_project
               feature_table_name: dev_occupancy_feature
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
         
         - task_key: Register-Validate-Model
-          existing_cluster_id: 1226-151352-27sokbau
+          existing_cluster_id: 1226-211538-cvgpajib
           depends_on: 
             - task_key: Train-Model
           notebook_task: 
@@ -24,7 +24,7 @@ resources:
             base_parameters: 
               env: ${bundle.target}
               experiment_name: ${bundle.target}_ProjectOccupancy
-              catalog_name: prod-bms
+              catalog_name: devaiml
               schema_name: occupancy_project
               model_name: ${bundle.target}_occupancymodel
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data

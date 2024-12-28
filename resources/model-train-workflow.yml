@@ -28,3 +28,17 @@ resources:
               schema_name: occupancy_project
               model_name: ${bundle.target}_occupancymodel
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
+
+        - task_key: Deploy-Model
+          existing_cluster_id: 1226-211538-cvgpajib
+          depends_on: 
+            - task_key: Register-Validate-Model
+          notebook_task:
+            notebook_path: ../main/steps/deploy_model.ipynb
+            base_parameters:
+              env: ${bundle.target}
+              model_name: ${bundle.target}_occupancymodel
+              schema_name: occupancy_project
+              catalog_name: devaiml 
+              serving_endpioint_name: ${bundle.target}_occupancy_endpoint
+              inference_table_name: ${bundle.target}_occupancy_inference

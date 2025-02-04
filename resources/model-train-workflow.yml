@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-model-training-job
       tasks:
         - task_key: Train-Model
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           notebook_task:
             notebook_path: ../main/steps/train_model.ipynb
             base_parameters:
@@ -16,7 +16,7 @@ resources:
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
         
         - task_key: Register-Validate-Model
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           depends_on: 
             - task_key: Train-Model
           notebook_task: 
@@ -30,7 +30,7 @@ resources:
               validation_data_path: dbfs:/FileStore/ValidationData/occupancy_mlops_validation_data
 
         - task_key: Deploy-Model
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           depends_on: 
             - task_key: Register-Validate-Model
           notebook_task:

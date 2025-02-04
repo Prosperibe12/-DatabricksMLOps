@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-model-monitor-job
       tasks:
         - task_key: Monitor-Model
-          existing_cluster_id: 1226-211538-cvgpajib
+          existing_cluster_id: 0204-141819-fnyfe7ub
           notebook_task:
             notebook_path: ../main/steps/monitor_model.ipynb
             base_parameters:

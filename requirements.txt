@@ -3,3 +3,8 @@ numpy
 seaborn
 matplotlib
 databricks-sdk
+pytest
+hyperopt
+tensorflow
+databricks-sdk>=0.28.0
+databricks-feature-engineering

@@ -42,3 +42,11 @@ resources:
               catalog_name: devaiml 
               serving_endpioint_name: ${bundle.target}_occupancy_endpoint
               inference_table_name: ${bundle.target}_occupancy_inference
+      
+      schedule:
+        quartz_cron_expression:  "0 18 * * * ?"
+        timezone_id: UTC 
+
+      email_notifications:
+        on_failure: 
+          - prosperibe12@gmail.com

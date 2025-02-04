@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-feature-engineering-job
       tasks:
         - task_key: Ingest-Raw-data
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           notebook_task: 
             notebook_path: ../feature_engineering/notebook/ingest_data.ipynb
             base_parameters:
@@ -15,7 +15,7 @@ resources:
               schema_name: occupancy_project
               
         - task_key: Exploratory-Data-Analysis
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           depends_on:
             - task_key: Ingest-Raw-data
           notebook_task:
@@ -26,7 +26,7 @@ resources:
               schema_name: occupancy_project
           
         - task_key: Feature-Store
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           depends_on:
             - task_key: Exploratory-Data-Analysis
           notebook_task:

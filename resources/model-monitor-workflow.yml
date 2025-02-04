@@ -1,0 +1,16 @@
+resources:
+  jobs:
+    model_monitor_job:
+      name: ${bundle.target}-model-monitor-job
+      tasks:
+        - task_key: Monitor-Model
+          existing_cluster_id: 1226-211538-cvgpajib
+          notebook_task:
+            notebook_path: ../main/steps/monitor_model.ipynb
+            base_parameters:
+              env: ${bundle.target}
+              catalog_name: devaiml
+              schema_name: occupancy_project
+              feature_table_name: ${bundle.target}_occupancy_feature
+              inference_table_name: ${bundle.target}_occupancy_inference
+              assets_dir: /Users/${workspace.current_user.userName}/occupancy_lakehouse_monitoring

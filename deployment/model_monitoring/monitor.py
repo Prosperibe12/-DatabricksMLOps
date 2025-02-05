@@ -42,8 +42,7 @@ class ModelMonitor:
             table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
             assets_dir=self.assets_dir,
             output_schema_name=f"{self.catalog}.{self.schema}",
-            baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}",
-            granularity=granularity,
+            baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}"
         )
         print(info)
 

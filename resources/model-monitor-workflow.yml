@@ -4,7 +4,7 @@ resources:
       name: ${bundle.target}-model-monitor-job
       tasks:
         - task_key: Monitor-Model
-          existing_cluster_id: 0204-141819-fnyfe7ub
+          existing_cluster_id: 0204-154223-ucg3t0u0
           notebook_task:
             notebook_path: ../main/steps/monitor_model.ipynb
             base_parameters:
@@ -12,5 +12,5 @@ resources:
               catalog_name: devaiml
               schema_name: occupancy_project
               feature_table_name: ${bundle.target}_occupancy_feature
-              inference_table_name: ${bundle.target}_occupancy_inference
+              inference_table_name: ${bundle.target}_occupancy_inference_payload
               assets_dir: /Users/${workspace.current_user.userName}/occupancy_lakehouse_monitoring

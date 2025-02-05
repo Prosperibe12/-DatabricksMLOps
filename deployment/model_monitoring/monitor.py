@@ -28,11 +28,13 @@ class ModelMonitor:
         # granularity of the monitor
         granularity = ["1 day"]
         # instantiate the monitor inference log
-        inference_log = MonitorInferenceLog(
-            timestamp_col="timestamp",
-            granularities=granularity,
-            problem_type=problem_type,
-        )
+        # inference_log = MonitorInferenceLog(
+        #     timestamp_col="timestamp",
+        #     granularities=granularity,
+        #     model_id_col="model_version",
+        #     problem_type=problem_type,
+        #     prediction_col="response",
+        # )
         # connect to the workspace
         w = WorkspaceClient()
         # create a monitor
@@ -41,29 +43,9 @@ class ModelMonitor:
             assets_dir=self.assets_dir,
             output_schema_name=f"{self.catalog}.{self.schema}",
             baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}",
+            granularity=granularity,
         )
-
-    def update_monitor(self):
-        """
-        Update the monitor configuration.
-        """
-        # define problem type
-        problem_type = MonitorInferenceLogProblemType.PROBLEM_TYPE_CLASSIFICATION
-        # granularity of the monitor
-        granularity = ["1 day"]
-        # asset directory for storing monitor artifacts
-        asset_directory = self.assets_dir
-        # instantiate the monitor inference log
-        inference_log = MonitorInferenceLog(
-            timestamp_col="timestamp",
-            granularities=granularity,
-            problem_type=problem_type,
-            asset_directory=asset_directory
-        )
-        # connect to the workspace
-        w = WorkspaceClient()
-        # update the monitor
-        info = w.quality_monitors
+        print(info)
 
     def monitor(self):
         """
@@ -77,12 +59,13 @@ class ModelMonitor:
                 print(f"Monitor {self.inference_table} already exists, updating the monitor...")
                 # update the monitor
                 w.quality_monitors.update(
-
+                    table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
+                    output_schema_name=f"{self.catalog}.{self.schema}",
+                    baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}"
                 )
 
         except Exception as e:
             print(f"Monitor {self.inference_table} does not exist, creating the monitor...")
             # create the monitor
-            w.quality_monitors.create(
-
-            )
+            self.create_monitor()
+            print(f"Monitor {self.inference_table} created successfully.")

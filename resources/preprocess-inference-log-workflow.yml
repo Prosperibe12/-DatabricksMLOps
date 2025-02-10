@@ -1,0 +1,19 @@
+resources:
+  jobs:
+    inference_log_job:
+      name: ${bundle.target}-inference-log-job
+      tasks:
+        - task_key: Preprocess-Inference-Log
+          existing_cluster_id: 0204-154223-ucg3t0u0
+          notebook_task:
+            notebook_path: ../main/steps/preprocess_inference_log.ipynb 
+            base_parameters:
+              env: ${bundle.target}
+              catalog_name: devaiml
+              schema_name: occupancy_project
+              inference_table_name: ${bundle.target}_occupancy_inference_payload
+
+      schedule:
+        quartz_cron_expression: "00 00 * * * ?"
+        timezone_id: UUTC
+    

@@ -17,6 +17,7 @@ include:
   - ./resources/feature-engineering-workflow.yml
   - ./resources/model-train-workflow.yml
   - ./resources/model-monitor-workflow.yml
+  - ./resources/preprocess-inference-log-workflow.yml
 
 targets:
   dev:

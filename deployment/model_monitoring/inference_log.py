@@ -28,7 +28,7 @@ Functions:
             DataFrame: The processed DataFrame with extracted features, predictions, and additional metadata.
 """
 
-def read_inference_logs_from_table(table):
+def read_inference_log_from_table(table):
     """
     Read inference logs from a table for the current day.
     """
@@ -43,67 +43,83 @@ def read_inference_logs_from_table(table):
     
     return inference_df
 
-
 def convert_to_record_json(json_str: str):
     try:
         request = json.loads(json_str)
     except json.JSONDecodeError:
-        return json_str
+        return json_str  # Return original string if parsing fails
     
     output = []
-    if isinstance(request, dict):
-        # handle different JSON formats and convert to common format
-        if "dataframe_records" in request:
-            output.extend(request["dataframe_records"])
-        elif "dataframe_split" in request:
-            dataframe_split = request["dataframe_split"]
-            output.extend([dict(zip(dataframe_split["columns"], values)) for values in dataframe_split["data"]])
-        elif "instances" in request:
-            output.extend(request["instances"])
-        elif "inputs" in request:
-            if isinstance(request["inputs"], list) and all(isinstance(i, list) for i in request["inputs"]):
-                output.extend([dict(zip(["input_{}".format(i) for i in range(len(values))], values)) for values in request["inputs"]])
-            else:
-                output.extend([dict(zip(request["inputs"].keys(), values)) for values in zip(*request["inputs"].values())])
-        elif "predictions" in request:
-            output.extend([{'predictions': prediction} for prediction in request["predictions"]])
-        return json.dumps(output)
-    else:
-        # if the format is unsupported, return the original JSON string
-        return json_str
-    
+    if isinstance(request, dict) and "inputs" in request:
+        if isinstance(request["inputs"], list) and all(isinstance(i, list) for i in request["inputs"]):
+            output.extend([{
+                "request_index": idx,  # Track input order
+                "input_0": values[0],
+                "input_1": values[1],
+                "input_2": values[2],
+                "input_3": values[3]
+            } for idx, values in enumerate(request["inputs"])])
+    return json.dumps(output) if output else json_str
+
 @F.pandas_udf(T.StringType())
 def json_consolidation_udf(json_strs: pd.Series) -> pd.Series:
-    return json_strs.apply(convert_to_record_json) 
+    return json_strs.apply(convert_to_record_json)
 
 def process_request(request_raw: DataFrame):
-    # transform timestamp_ms to a readable format
-    requests_timestamped = request_raw.withColumn("timestamp_ms", from_unixtime(F.col("timestamp_ms") / 1000).cast(TimestampType()))
-    # unpack JSON from the 'request' column only since 'response' is already structured
-    requests_unpacked = requests_timestamped.withColumn("request", json_consolidation_udf(F.col("request"))) \
-                                            .withColumn("request", F.explode(F.from_json(F.col("request"), T.ArrayType(T.StructType([
-                                                T.StructField("input_0", T.DoubleType()),
-                                                T.StructField("input_1", T.DoubleType()),
-                                                T.StructField("input_2", T.DoubleType()),
-                                                T.StructField("input_3", T.DoubleType())
-                                            ])))))
-    # Extract feature columns as scalar values
-    feature_columns = ["input_0", "input_1", "input_2", "input_3"]
-    for col_name in feature_columns:
-        requests_unpacked = requests_unpacked.withColumn(col_name, F.col(f"request.{col_name}"))
-    
-    # extract predictions from the 'response' column without using the from_json
-    requests_unpacked = requests_unpacked.withColumn("response", F.from_json(F.col("response"), T.StructType([T.StructField("predictions", T.ArrayType(T.IntegerType()))])))
-    requests_unpacked = requests_unpacked.withColumn("occupancy", F.explode(F.col("response.predictions")))
-    # drop unecessary columns
-    request_cleaned = requests_unpacked.drop("request", "response", "request_metadata")
+    # Convert timestamp to human-readable format
+    requests_timestamped = request_raw.withColumn(
+        "timestamp_ms", from_unixtime(F.col("timestamp_ms") / 1000).cast(T.TimestampType())
+    )
+
+    # Extract and process JSON request column
+    requests_unpacked = requests_timestamped.withColumn("request", json_consolidation_udf(F.col("request")))
+    requests_unpacked = requests_unpacked.withColumn(
+        "request",
+        F.from_json(F.col("request"), T.ArrayType(T.StructType([
+            T.StructField("request_index", T.IntegerType()),  # Preserve input order
+            T.StructField("input_0", T.DoubleType()),
+            T.StructField("input_1", T.DoubleType()),
+            T.StructField("input_2", T.DoubleType()),
+            T.StructField("input_3", T.DoubleType())
+        ])))
+    )
+
+    # Correct aliasing for posexplode
+    requests_unpacked = requests_unpacked.selectExpr("*", "posexplode(request) AS (pos, col)")
+
+    # Extract feature columns
+    for col_name in ["input_0", "input_1", "input_2", "input_3"]:
+        requests_unpacked = requests_unpacked.withColumn(col_name, F.col(f"col.{col_name}"))
+
+    # Drop unnecessary intermediate columns
+    requests_unpacked = requests_unpacked.drop("col")
+
+    # Parse response column safely
+    requests_unpacked = requests_unpacked.withColumn(
+        "response", F.from_json(F.col("response"), T.StructType([
+            T.StructField("predictions", T.ArrayType(T.IntegerType()))
+        ]))
+    )
+
+    # Explode predictions while maintaining correct order using posexplode
+    requests_unpacked = requests_unpacked.selectExpr("*", "posexplode(response.predictions) AS (prediction_index, occupancy)")
+
+    # Ensure predictions and inputs are correctly mapped
+    requests_unpacked = requests_unpacked.filter(F.col("pos") == F.col("prediction_index"))
+
+    # Drop unnecessary columns
+    request_cleaned = requests_unpacked.drop("request", "response", "request_metadata", "pos", "prediction_index")
+
     # Add a placeholder model_id column
     final_df = request_cleaned.withColumn("model_id", F.lit(0).cast(T.IntegerType()))
-    # rename columns
+
+    # Rename feature columns
     df = final_df.withColumnRenamed("input_0", "Temperature") \
-                    .withColumnRenamed("input_1", "Light") \
-                    .withColumnRenamed("input_2", "CO2") \
-                    .withColumnRenamed("input_3", "HumidityRatio")
+                 .withColumnRenamed("input_1", "Light") \
+                 .withColumnRenamed("input_2", "CO2") \
+                 .withColumnRenamed("input_3", "HumidityRatio")
+
     # Remove duplicate rows
     df = df.dropDuplicates()
+
     return df

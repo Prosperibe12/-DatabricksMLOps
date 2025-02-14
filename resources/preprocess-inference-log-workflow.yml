@@ -14,6 +14,6 @@ resources:
               inference_table_name: ${bundle.target}_occupancy_inference_payload
 
       schedule:
-        quartz_cron_expression: "00 00 * * * ?"
-        timezone_id: UUTC
+        quartz_cron_expression: "0 0 0 * * ?"
+        timezone_id: UTC
     

@@ -39,5 +39,5 @@ resources:
               feature_table_name: ${bundle.target}_occupancy_feature
 
       schedule: 
-        quartz_cron_expression: "0 9 * * * ?" # daily at 9am
+        quartz_cron_expression: "0 0 * * * ?" # daily at 12am
         timezone_id: UTC

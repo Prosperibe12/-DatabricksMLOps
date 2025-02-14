@@ -1,5 +1,5 @@
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import (MonitorInferenceLog, MonitorInferenceLogProblemType,
+from databricks.sdk.service.catalog import (MonitorInferenceLog, MonitorInferenceLogProblemType, MonitorCronSchedule,
 MonitorInfoStatus, MonitorRefreshInfoState, MonitorMetric)
 
 
@@ -19,7 +19,7 @@ class ModelMonitor:
         self.inference_table = inference_table
         self.assets_dir = assets_dir
 
-    def create_monitor(self):
+    def create_inference_log_monitor(self):
         """ 
         Define the monitor configuration.
         """
@@ -28,27 +28,22 @@ class ModelMonitor:
         # granularity of the monitor
         granularity = ["1 day"]
         # instantiate the monitor inference log
-        # inference_log = MonitorInferenceLog(
-        #     timestamp_col="timestamp",
-        #     granularities=granularity,
-        #     model_id_col="model_version",
-        #     problem_type=problem_type,
-        #     prediction_col="response",
-        # )
-        # connect to the workspace
-        w = WorkspaceClient()
-        # create a monitor
-        info = w.quality_monitors.create(
-            table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
-            assets_dir=self.assets_dir,
-            output_schema_name=f"{self.catalog}.{self.schema}",
-            baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}"
+        inference_log = MonitorInferenceLog(
+            timestamp_col="timestamp_ms",
+            granularities=granularity,
+            model_id_col="model_id",
+            problem_type=problem_type,
+            prediction_col="occupancy",
         )
-        print(info)
+        # add cron schedule
+        cron_schedule = MonitorCronSchedule(
+            quartz_cron_expression = "0 0 12 * * ?"
+        )
+        return inference_log, cron_schedule
 
     def monitor(self):
         """
-        Monitor model performance.
+        Create Monitoring dashboard.
         """
         # connect to the workspace
         w = WorkspaceClient()
@@ -62,9 +57,19 @@ class ModelMonitor:
                     output_schema_name=f"{self.catalog}.{self.schema}",
                     baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}"
                 )
+                return "Monitor updated successfully."
 
-        except Exception as e:
+        except Exception:
             print(f"Monitor {self.inference_table} does not exist, creating the monitor...")
+            # get the inference log monitor
+            inference_log, cron_schedule = self.create_inference_log_monitor()
             # create the monitor
-            self.create_monitor()
-            print(f"Monitor {self.inference_table} created successfully.")
+            w.quality_monitors.create(
+                table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
+                assets_dir=self.assets_dir,
+                output_schema_name=f"{self.catalog}.{self.schema}",
+                baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}",
+                inference_log=inference_log,
+                schedule=cron_schedule
+            )
+            return "Monitor created successfully."

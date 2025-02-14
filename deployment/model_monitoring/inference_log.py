@@ -102,7 +102,7 @@ def process_request(request_raw: DataFrame):
     )
 
     # Explode predictions while maintaining correct order using posexplode
-    requests_unpacked = requests_unpacked.selectExpr("*", "posexplode(response.predictions) AS (prediction_index, occupancy)")
+    requests_unpacked = requests_unpacked.selectExpr("*", "posexplode(response.predictions) AS (prediction_index, Occupancy)")
 
     # Ensure predictions and inputs are correctly mapped
     requests_unpacked = requests_unpacked.filter(F.col("pos") == F.col("prediction_index"))

@@ -44,7 +44,7 @@ resources:
               inference_table_name: ${bundle.target}_occupancy_inference
       
       schedule:
-        quartz_cron_expression:  "0 0 30 * * ?"
+        quartz_cron_expression:  "0 0 1 */30 * ?"
         timezone_id: UTC 
 
       email_notifications:

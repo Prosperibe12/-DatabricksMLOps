@@ -11,6 +11,6 @@ resources:
               env: ${bundle.target}
               catalog_name: devaiml
               schema_name: occupancy_project
-              feature_table_name: ${bundle.target}_occupancy_feature
-              inference_table_name: ${bundle.target}_dev_occupancy_inference_payload_processed
+              feature_table_name: devaiml.occupancy_project.dev_occupancy_feature
+              inference_table_name: devaiml.occupancy_project.dev_occupancy_inference_payload_processed
               assets_dir: /Users/${workspace.current_user.userName}/occupancy_lakehouse_monitoring

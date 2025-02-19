@@ -38,6 +38,19 @@ resources:
               gold_table_name: goldtable 
               feature_table_name: ${bundle.target}_occupancy_feature
 
+        - task_key: Model-Monitor-Features
+          existing_cluster_id: 0204-154223-ucg3t0u0
+          depends_on:
+            - task_key: Feature-Store
+          notebook_task:
+            notebook_path: ../feature_engineering/notebook/model_monitor_features.ipynb
+            base_parameters:
+              env: ${bundle.target}
+              catalog_name: devaiml
+              schema_name: occupancy_project
+              source_table_name: ${bundle.target}_occupancy_feature
+              monitor_table_name: ${bundle.target}_occupancy_feature_monitor
+
       schedule: 
         quartz_cron_expression: "0 0 * * * ?" # daily at 12am
         timezone_id: UTC

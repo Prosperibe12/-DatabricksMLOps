@@ -8,3 +8,6 @@ hyperopt
 tensorflow
 databricks-sdk>=0.28.0
 databricks-feature-engineering
+mlflow
+# 15.4 LTS ML (includes Apache Spark 3.5.0, Scala 2.12)
+# Standard_D3_v2 14 GB Memory, 4 Cores

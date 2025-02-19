@@ -43,7 +43,7 @@ resources:
           depends_on:
             - task_key: Feature-Store
           notebook_task:
-            notebook_path: ../feature_engineering/notebook/model_monitor_features.ipynb
+            notebook_path: ../main/steps/model_monitor_features.ipynb
             base_parameters:
               env: ${bundle.target}
               catalog_name: devaiml

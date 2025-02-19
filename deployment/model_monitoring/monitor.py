@@ -13,8 +13,8 @@ class ModelMonitor:
         The name of the table containing inference data for monitoring model performance.
     """
     def __init__(self, catalog, schema, baseline_table, inference_table, assets_dir):
-        self.catalog = catalog,
-        self.schema = schema,
+        self.catalog = catalog
+        self.schema = schema
         self.baseline_table = baseline_table
         self.inference_table = inference_table
         self.assets_dir = assets_dir
@@ -50,7 +50,6 @@ class ModelMonitor:
         w = WorkspaceClient()
         # get the inference log monitor
         inference_log, cron_schedule = self.create_inference_log_monitor()
-        schema = self.catalog + "." + self.schema
 
         try:
             # get the monitor info
@@ -72,7 +71,7 @@ class ModelMonitor:
             w.quality_monitors.create(
                 table_name=self.inference_table,
                 assets_dir=self.assets_dir,
-                output_schema_name=schema,
+                output_schema_name=f"{self.catalog}.{self.schema}",
                 baseline_table_name=self.baseline_table,
                 inference_log=inference_log,
                 schedule=cron_schedule

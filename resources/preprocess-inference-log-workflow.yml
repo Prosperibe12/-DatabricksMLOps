@@ -12,6 +12,7 @@ resources:
               catalog_name: devaiml
               schema_name: occupancy_project
               inference_table_name: ${bundle.target}_occupancy_inference_payload
+              processed_table_name: ${bundle.target}_occupancy_inference_payload_processed
 
       schedule:
         quartz_cron_expression: "0 0 0 * * ?"

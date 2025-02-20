@@ -1,6 +1,6 @@
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import (MonitorInferenceLog, MonitorInferenceLogProblemType, MonitorCronSchedule,
-MonitorInfoStatus, MonitorRefreshInfoState, MonitorMetric)
+MonitorInfoStatus, QualityMonitorsAPI, MonitorMetric)
 
 
 class ModelMonitor:
@@ -53,13 +53,13 @@ class ModelMonitor:
 
         try:
             # get the monitor info
-            if w.quality_monitors.get(name=self.inference_table):
+            if w.quality_monitors.get(name=f"{self.catalog}.{self.schema}.{self.inference_table}"):
                 print(f"Monitor {self.inference_table} already exists, updating the monitor...")
                 # update the monitor
                 w.quality_monitors.update(
-                    table_name=self.inference_table,
+                    table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
                     output_schema_name=f"{self.catalog}.{self.schema}",
-                    baseline_table_name=self.baseline_table,
+                    baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}",
                     inference_log=inference_log,
                     schedule=cron_schedule
                 )
@@ -69,10 +69,10 @@ class ModelMonitor:
             print(f"Monitor {self.inference_table} does not exist, creating the monitor...")
             # create the monitor
             w.quality_monitors.create(
-                table_name=self.inference_table,
+                table_name=f"{self.catalog}.{self.schema}.{self.inference_table}",
                 assets_dir=self.assets_dir,
                 output_schema_name=f"{self.catalog}.{self.schema}",
-                baseline_table_name=self.baseline_table,
+                baseline_table_name=f"{self.catalog}.{self.schema}.{self.baseline_table}",
                 inference_log=inference_log,
                 schedule=cron_schedule
             )
